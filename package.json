@@ -1,0 +1,23 @@
+{
+  "name": "png_split",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel -w src -d build -s",
+    "start": "npm run build && node build/index.js"
+  },
+  "author": "vollen",
+  "license": "ISC",
+  "devDependencies": {
+    "babel": "^6.23.0",
+    "babel-cli": "^6.24.1",
+    "babel-eslint": "^7.2.3",
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-env": "^1.4.0"
+  },
+  "dependencies": {
+    "pngjs-image": "^0.11.7"
+  }
+}
