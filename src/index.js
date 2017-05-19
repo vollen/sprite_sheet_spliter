@@ -1,102 +1,102 @@
 import PngImage from "pngjs-image";
 import fs from "fs-extra-promise";
 import promise from "bluebird";
-import node_png from "node-png";
+import path from "path";
 
 // const saveImage = promise.promisify(PngImage.writeImage);
 
-// async readF
-function split(image, config, path) {
-  console.log(image);
-  const resList = config.res || {};
-  for(let k in resList){
-    const {x, y, w, h} = resList[k];
-    var newImage = PngImage.createImage(w, h);
-    image.getImage().bitblt(newImage.getImage(), x, y, w, h, 0, 0);
-    // promisList.push(saveImage().call(image, path + k + ".png"));
-    console.log("--getFile-", path + k, x, y, w, h);
-    newImage.writeImage(path + k + ".png", function(err){
-      if (err){
-        console.log("save file failed" + err);
-      } else {
-        console.log("save file successed", path + k + ".png");
-      }
-    });
-  }
-  // promise.all(promisList).then(()=>{
-  //   console.log("split file" + path + "successed");
-  // }).catch(err=>{
-  //   console.log("save file failed" + err);
-  // })
+const loadImage = promise.promisify(PngImage.loadImage);
+function loadPng(filename) {
+  return fs.readFileAsync(filename)
+    .then((data) => {
+      return loadImage(data);
+    })
 }
 
-function dealFile(pngFile, jsonFile, path) {
-  const fileName = pngFile.slice(0, -4);
-  promise.all([
-    // readImage(pngFile),
-    fs.readFileAsync(pngFile),
-    fs.readFileAsync(jsonFile)
-  ]).then((values)=>{
-    const [image, jsonBuffer] = values;
-    const config = JSON.parse(jsonBuffer);
-    splitAndSave(PngImage.loadImageSync(image), config, path + fileName + "/");
-  }).catch((err)=>{
-    console.log(err);
+function writeImage(image, path) {
+  return new Promise((resolve, reject) => {
+    image.writeImage(path, (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+function explorer(input, output) {
+  input = path.resolve(input);
+  output = path.resolve(output);
+  fs.readdirAsync(input)
+    .map(function (fileName) {
+      const fullName = input + "/" + fileName;
+      const tmpOutput = path.join(output, fileName)
+      if (path.extname(fileName) == ".png") {
+        doWithPng(fullName, tmpOutput);
+      } else {
+        doWithOther(fullName, tmpOutput);
+      }
+    })
+    .catch(err => {
+      console.log('error:\n', err);
+    })
+}
+
+function doWithPng(fullName, output) {
+  const configFile = parser.getConfigFile(fullName);
+  fs.existsAsync(configFile)
+    .then((result) => {
+      if (result) {
+        output = output.slice(0, -4)
+        dealSpriteSheet(fullName, configFile, output);
+      } else {
+        fs.copy(fullName, output);
+      }
+    });
+}
+
+function doWithOther(fullName, output) {
+  fs.isDirectoryAsync(fullName)
+    .then((result) => {
+      if (result) {
+        explorer(fullName, output);
+      } else {
+        fs.copy(fullName, output);
+      }
+    });
+}
+
+function dealSpriteSheet(pngFile, configFile, output) {
+  return promise.all([
+    loadPng(pngFile),
+    fs.readFileAsync(configFile),
+    fs.mkdirpAsync(output)
+  ]).then((values) => {
+    const [image, configBuffer] = values;
+    const images = parser.split(image, configBuffer);
+    return promise.resolve(images);
   })
-}
-
-function splitAndSave(image, jsonData, path){
-  fs.existsAsync(path)
-    .then((result)=>{
-      if(result){
-            split(image, jsonData, path);
-      } else {
-        fs.mkdirpAsync(path)
-          .then((err)=>{
-            if(err){
-              console.log(err);
-              return;
-            }
-            split(image, jsonData, path);
-          })
+    .then((images) => {
+      const promises = [];
+      for (let k in images) {
+        const newImage = images[k];
+        promises.push(writeImage(newImage, path.join(output, k + ".png")));
       }
-    });
+      return Promise.all(promises);
+    }).catch((err) => {
+      console.log(err);
+    })
 }
 
-function explorer(path) {
-    fs.readdirAsync(path)
-      .then(files=>{
-        var len = files.length;
-        for (var i = 0; i < len; i++) {
-            var fileName = files[i];
-            const fullName = path + "/" + fileName;
-            const name = fileName.slice(0, -4);
-            if(fileName.slice(-4) == ".png"){
-              const jsonName =  path +"/"+ name + ".json";
-              fs.existsAsync(jsonName)
-                .then((result)=>{
-                  if (result){
-                    console.log("---deal---file--", jsonName);
-                    dealFile(fullName, jsonName, "output");
-                  }
-                })
-            } else{
-              fs.isDirectoryAsync(fullName)
-                .then((result)=>{
-                  // console.log(fullName, result);
-                  if (result){
-                      explorer(fullName);
-                  }
-                })
-                .catch(()=>{
-                });
-            }
-        }
-      })
-      .catch(err=>{
-          console.log('error:\n', err);
-      })
+
+const config = {
+  // input : "/home/leng/test/ssss",
+  input: "/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/",
+  output: "output/",
+  parser: "./egretParser",
 }
 
-// explorer("/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/")
-explorer("/home/leng/test/ssss");
+const parser = require(config.parser);
+explorer(config.input, config.output);
+// explorer("input/");
