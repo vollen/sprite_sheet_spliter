@@ -30,69 +30,62 @@ function explorer(input, output) {
   output = path.resolve(output);
   fs.readdirAsync(input)
     .map(function (fileName) {
-      const fullName = input + "/" + fileName;
       const tmpOutput = path.join(output, fileName)
-      if (path.extname(fileName) == ".png") {
-        doWithPng(fullName, tmpOutput);
-      } else {
-        doWithOther(fullName, tmpOutput);
-      }
+      return fs.existsAsync(fileName)
+      .then(result=>{
+        const fullName = path.join(input, fileName);
+        if (result) {
+          explorer(fullName, tmpOutput);
+        } else {
+          dealFile(fullName, tmpOutput);
+        }
+      })
     })
     .catch(err => {
       console.log('error:\n', err);
     })
 }
 
-function doWithPng(fullName, output) {
-  const configFile = parser.getConfigFile(fullName);
-  fs.existsAsync(configFile)
-    .then((result) => {
-      if (result) {
-        output = output.slice(0, -4)
-        dealSpriteSheet(fullName, configFile, output);
-      } else {
-        fs.copy(fullName, output);
+function dealFile(fileName, output){
+  parser.getPolicy(fileName)
+    .then(result=>{
+      const {policy, data} = result;
+      if(policy == parser.POLICY.COPY){
+        fs.copy(fileName, output);
+      } else if (policy == parser.POLICY.PNG){
+        output = output + "_" + parser.POLICY.PNG;
+        const {png, config} = data;
+        dealSpriteSheet(png, config, output);
       }
-    });
-}
-
-function doWithOther(fullName, output) {
-  fs.isDirectoryAsync(fullName)
-    .then((result) => {
-      if (result) {
-        explorer(fullName, output);
-      } else {
-        fs.copy(fullName, output);
-      }
-    });
+    })
 }
 
 function dealSpriteSheet(pngFile, configFile, output) {
   return promise.all([
     loadPng(pngFile),
-    fs.readFileAsync(configFile),
+    fs.readFileAsync(configFile, "utf8"),
     fs.mkdirpAsync(output)
   ]).then((values) => {
     const [image, configBuffer] = values;
     const images = parser.split(image, configBuffer);
     return promise.resolve(images);
+  }).then((images) => {
+    console.log(images)
+    const promises = [];
+    for (let k in images) {
+      const newImage = images[k];
+      promises.push(writeImage(newImage, path.join(output, k + ".png")));
+    }
+    return Promise.all(promises);
+  }).catch((err) => {
+    console.log(err);
   })
-    .then((images) => {
-      const promises = [];
-      for (let k in images) {
-        const newImage = images[k];
-        promises.push(writeImage(newImage, path.join(output, k + ".png")));
-      }
-      return Promise.all(promises);
-    }).catch((err) => {
-      console.log(err);
-    })
 }
 
 
 const config = {
   // input : "/home/leng/test/ssss",
-  input: "/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/",
+  input: "input/",
   output: "output/",
   parser: "./egretParser",
 }

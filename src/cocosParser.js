@@ -1,14 +1,30 @@
 import IParser from "./IParser";
 import PngImage from "pngjs-image";
+import plist from "plist";
+import gm from "gm";
 
-const JSON_EXT = ".json";
+const PLIST_EXT = ".plist";
 function getPolicy(filename){
-  return IParser.getPolicy(filename, JSON_EXT);
+  return IParser.getPolicy(filename, PLIST_EXT);
 }
 
 function split(image, configBuffer) {
-  const config = JSON.parse(configBuffer);
-  const infos = getImagesInfo(config);
+  const config = plist.parse(configBuffer);
+  const format = config.metadata ? config.metadata.format : 0;
+  const frames = config.frames;
+  if (format == 2){
+      for(let k in frames){
+        const data = frames[k];
+        const [x, y, w, h] = getConfigValues(data.frame);
+        const rotate = data.rotated;
+        const [ox, oy] = getConfigValues(data.offset);
+        const [sw, sh] = getConfigValues(data.sourceSize);
+
+        const newImage = PngImage.createImage(sw, sh);
+
+      }
+  }
+
   const resList = config.res || {};
   const images = {};
   for(let k in resList){
@@ -21,6 +37,10 @@ function split(image, configBuffer) {
     images[k] = newImage;
   }
   return images;
+}
+
+function getConfigValues(str){
+    return str.match(/\d/g);
 }
 
 function checkValue(originV, newV, func){
