@@ -70,7 +70,6 @@ function dealSpriteSheet(pngFile, configFile, output) {
     const images = parser.split(image, configBuffer);
     return promise.resolve(images);
   }).then((images) => {
-    console.log(images)
     const promises = [];
     for (let k in images) {
       const newImage = images[k];
@@ -87,7 +86,8 @@ const config = {
   // input : "/home/leng/test/ssss",
   input: "input/",
   output: "output/",
-  parser: "./egretParser",
+  // parser: "./egretParser",
+  parser: "./cocosParser",
 }
 
 const parser = require(config.parser);

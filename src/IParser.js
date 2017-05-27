@@ -10,16 +10,16 @@ const POLICY = {
 }
 
 const PNG_EXT = ".png";
-function getPolicy(fileName, configExt){
+function getPolicy(filename, configExt){
   const extName = path.extname(filename);
   if(extName == configExt){
     const pngName = replaceExt(filename, configExt, PNG_EXT);
     return fs.existsAsync(pngName)
         .then((result)=>{
           if(result){
-              return{policy: IParser.POLICY.PNG, data:{png:pngName, config:filename}};
+              return{policy: POLICY.PNG, data:{png:pngName, config:filename}};
           } else {
-              return{policy: IParser.POLICY.COPY};
+              return{policy: POLICY.COPY};
           }
         });
   } else if(extName == PNG_EXT){
@@ -27,13 +27,13 @@ function getPolicy(fileName, configExt){
     return fs.existsAsync(jsonName)
         .then((result)=>{
           if(result){
-              return {policy:IParser.POLICY.IGNORE};
+              return {policy:POLICY.IGNORE};
           } else {
-              return{policy: IParser.POLICY.COPY};
+              return{policy: POLICY.COPY};
           }
         });
   } else {
-    return promise.resolve({policy: IParser.POLICY.COPY});
+    return promise.resolve({policy: POLICY.COPY});
   }
 }
 
