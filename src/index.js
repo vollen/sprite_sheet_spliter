@@ -84,12 +84,11 @@ function dealSpriteSheet(pngFile, configFile, output) {
 
 const config = {
   // input : "/home/leng/test/ssss",
-  input: "input/",
-  output: "output/",
+  input: "input/aa",
+  output: "output/aa",
   // parser: "./egretParser",
-  parser: "./cocosParser",
+  parser: "./other",
 }
 
 const parser = require(config.parser);
 explorer(config.input, config.output);
-// explorer("input/");
