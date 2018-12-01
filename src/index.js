@@ -91,8 +91,8 @@ function dealSpriteSheet(pngFile, configFile, output) {
 
 
 const config = {
-  // input : "/home/leng/test/ssss",
-  input: "/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/",
+  input : "/Users/leng/self/tools/sprite_sheet_spliter/input",
+  // input: "/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/",
   output: "output/",
   parser: "./egretParser",
 }

@@ -5,11 +5,24 @@ function getConfigFile(pngName){
 
 function split(image, configBuffer) {
   const config = JSON.parse(configBuffer);
-  const infos = getImagesInfo(config);
-  const resList = config.res || {};
+  if(config.mc){
+    return splitMc(image, config);
+  } else {
+    return splitSheet(image, config);
+  }
+}
+
+function checkValue(originV, newV, func){
+  return originV ? func(originV, newV) : newV;
+}
+
+function splitMc(image, config){
+  const infos = getMCImagesInfo(config);
+  const frames = config.res;
+
   const images = {};
-  for(let k in resList){
-    const {x, y, w, h, } = resList[k];
+  for(let k in frames){
+    const {x, y, w, h, } = frames[k];
     const {width, height, offsetX, offsetY} = infos[k];
 
     var newImage = PngImage.createImage(width, height);
@@ -20,13 +33,10 @@ function split(image, configBuffer) {
   return images;
 }
 
-function checkValue(originV, newV, func){
-  return originV ? func(originV, newV) : newV;
-}
+function getMCImagesInfo(config){
+  let actions = config.mc;
+  let frames = config.res;
 
-function getImagesInfo(config){
-  const actions = config.mc;
-  const frames = config.res;
   let t_top = Number.MAX_VALUE;
   let t_left = Number.MAX_VALUE;
   let t_bottom = Number.MIN_VALUE;
@@ -73,6 +83,21 @@ function getImagesInfo(config){
 
   return infos;
 }
+
+function splitSheet(image, config){
+  const frames = config.frames;
+  const images = {};
+  for(let k in frames){
+    const {x, y, w, h, offX, offY, sourceW, sourceH} = frames[k];
+
+    var newImage = PngImage.createImage(sourceW, sourceH);
+    newImage.fillRect(0, 0, sourceW, sourceH, {red:0, green:0, blue:0, alpha:0})
+    image.getImage().bitblt(newImage.getImage(), x, y, w, h,offX, offY);
+    images[k] = newImage;
+  }
+  return images;
+}
+
 
 module.exports = {
   getConfigFile : getConfigFile,
