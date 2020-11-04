@@ -48,8 +48,13 @@ function doWithPng(fullName, output) {
   fs.existsAsync(configFile)
     .then((result) => {
       if (result) {
-        output = output.slice(0, -4)
-        dealSpriteSheet(fullName, configFile, output);
+        const dir = output.slice(0, -4)
+        dealSpriteSheet(fullName, configFile, dir)
+          .then(flag => {
+            if (!flag) {
+              fs.copy(fullName, output);
+            }
+          });
       } else {
         fs.copy(fullName, output);
       }
@@ -71,13 +76,15 @@ function dealSpriteSheet(pngFile, configFile, output) {
   return promise.all([
     loadPng(pngFile),
     fs.readFileAsync(configFile),
-    fs.mkdirpAsync(output)
   ]).then((values) => {
     const [image, configBuffer] = values;
     const images = parser.split(image, configBuffer);
     return promise.resolve(images);
-  })
-    .then((images) => {
+  }).then((images) => {
+      if (!images) {
+        return promise.resolve(false);
+      }
+      fs.mkdirpAsync(output)
       const promises = [];
       for (let k in images) {
         const newImage = images[k];
@@ -91,9 +98,10 @@ function dealSpriteSheet(pngFile, configFile, output) {
 
 
 const config = {
-  input : "/Users/leng/self/tools/sprite_sheet_spliter/input",
-  // input: "/home/leng/test/ssss/res/slth.triumbest.net/egret/resource/assets/model/fabao/",
-  output: "output/",
+  // input : "/Users/leng/self/tools/sprite_sheet_spliter/input",
+  // output: "output/",
+  input : "../gameres/kxxz",
+  output: "../gameres/kxxz_split/",
   parser: "./egretParser",
 }
 
